@@ -1,0 +1,65 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+
+
+}
+
+model User {
+  id                Int       @id @default(autoincrement())
+  username          String    @unique
+  email             String    @unique
+  password          String
+  avatar            String?
+  bio               String?
+  website           String?
+  // NUOVI CAMPI PER LA VERIFICA EMAIL:
+  verified          Boolean   @default(false)
+  verificationToken String?
+
+  projects          Project[]
+  comments          Comment[]
+  likes             Like[]
+}
+
+model Project {
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String
+  mediaUrl    String?
+  mediaType   String?   @default("text")
+  userId      Int
+  createdAt   DateTime  @default(now())
+  
+  author      User      @relation(fields: [userId], references: [id])
+  comments    Comment[]
+  likes       Like[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  text      String
+  createdAt DateTime @default(now())
+  projectId Int
+  userId    Int
+  
+  project   Project  @relation(fields: [projectId], references: [id])
+  author    User     @relation(fields: [userId], references: [id])
+}
+
+model Like {
+  id        Int     @id @default(autoincrement())
+  userId    Int
+  projectId Int
+  
+  user      User    @relation(fields: [userId], references: [id])
+  project   Project @relation(fields: [projectId], references: [id])
+
+  // Questa riga impedisce che lo stesso utente metta più di un like allo stesso post
+  @@unique([userId, projectId]) 
+}

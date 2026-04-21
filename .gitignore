@@ -1,0 +1,23 @@
+# Dipendenze
+node_modules/
+
+# File di ambiente (I TUOI SEGRETI)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build di Next.js
+.next/
+out/
+build/
+
+# File di sistema operativo
+.DS_Store
+Thumbs.db
+
+# Log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
