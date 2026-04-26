@@ -90,7 +90,8 @@ export default function MyProjectsPage() {
             <h1 className="text-3xl font-black text-cyan-400 uppercase tracking-tighter">I_Miei_Progetti.exe</h1>
             <p className="text-xs text-slate-500 mt-1">Gestione Dati Locali - Utente: {user.username}</p>
           </div>
-          <Link href="/" className="px-6 py-2 border border-slate-700 text-slate-400 rounded hover:bg-slate-800 hover:text-white uppercase text-xs font-bold transition-all">
+          {/* MODIFICA QUI: href punta a /feed */}
+          <Link href="/feed" className="px-6 py-2 border border-slate-700 text-slate-400 rounded hover:bg-slate-800 hover:text-white uppercase text-xs font-bold transition-all">
             Torna alla Home
           </Link>
         </div>

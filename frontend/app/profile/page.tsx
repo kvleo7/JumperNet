@@ -70,9 +70,9 @@ export default function ProfilePage() {
         localStorage.setItem('jumper_user', JSON.stringify(updatedData));
         setStatus('✅ PROTOCOLLO_AGGIORNATO_CON_SUCCESSO');
         
-        // Opzionale: torna alla home dopo un secondo
+        // MODIFICA QUI: Torna al feed dopo un secondo e mezzo
         setTimeout(() => {
-          router.push('/');
+          router.push('/feed');
         }, 1500);
       } else {
         setStatus(`❌ ERRORE: ${updatedData.error || 'Fallimento sincronizzazione'}`);
@@ -177,7 +177,7 @@ export default function ProfilePage() {
             </button>
             <button 
               type="button"
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/feed')} // MODIFICA QUI
               className="px-8 border border-slate-700 hover:border-slate-500 text-slate-500 hover:text-slate-200 p-4 rounded-xl uppercase text-sm transition-all"
             >
               Annulla

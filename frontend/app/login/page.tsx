@@ -1,13 +1,13 @@
 "use client";
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Aggiunto per il reindirizzamento
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const router = useRouter(); // Inizializza il router
+  const router = useRouter(); 
   const [isRegistering, setIsRegistering] = useState(false);
   const [formData, setFormData] = useState({ username: '', email: '', password: '' });
-  const [message, setMessage] = useState({ text: '', type: '' }); // type: 'error' | 'success' | 'info'
+  const [message, setMessage] = useState({ text: '', type: '' }); 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +26,6 @@ export default function LoginPage() {
         if (res.ok) {
           setMessage({ text: '✅ Registrazione completata. Controlla la tua casella email.', type: 'success' });
           setFormData({ username: '', email: '', password: '' });
-          // Dopo 3 secondi, passa in automatico alla schermata di login
           setTimeout(() => setIsRegistering(false), 3000);
         } else {
           setMessage({ text: `❌ Errore: ${data.error || 'Dati non validi'}`, type: 'error' });
@@ -48,15 +47,13 @@ export default function LoginPage() {
         if (res.ok) {
           setMessage({ text: '✅ Accesso Garantito. Sincronizzazione in corso...', type: 'success' });
           
-          // Salva i dati dell'utente nel browser (così resta loggato anche se aggiorna la pagina)
           localStorage.setItem('jumper_user', JSON.stringify(data));
           
-          // Reindirizza l'utente alla Home dopo 1.5 secondi
+          // MODIFICA QUI: Reindirizza l'utente al Feed dopo 1.5 secondi
           setTimeout(() => {
-            router.push('/');
+            router.push('/feed');
           }, 1500);
         } else {
-          // Mostra l'errore esatto dal backend (es. "Credenziali non valide" o "Account non verificato")
           setMessage({ text: `❌ Accesso Negato: ${data.error}`, type: 'error' });
         }
       } catch (err) {

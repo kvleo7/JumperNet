@@ -45,6 +45,11 @@ async function sendVerificationEmail(userEmail, token) {
 app.post('/api/register', async (req, res) => {
   const { username, email, password } = req.body;
   
+  // FIX: Controllo dati mancanti per evitare crash di bcrypt
+  if (!username || !email || !password) {
+    return res.status(400).json({ error: "Dati mancanti. Compila tutti i campi." });
+  }
+
   try {
     // 1. Cripta la password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -77,6 +82,12 @@ app.post('/api/register', async (req, res) => {
 // ==========================================
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
+  
+  // FIX: Controllo per evitare crash su compare()
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email e password richiesti." });
+  }
+
   try {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user || !(await bcrypt.compare(password, user.password))) {
@@ -97,6 +108,7 @@ app.post('/api/login', async (req, res) => {
       website: user.website 
     });
   } catch (e) {
+    console.error("Errore login:", e);
     res.status(500).json({ error: "Errore del server." });
   }
 });
@@ -145,9 +157,13 @@ app.put('/api/users/:id', async (req, res) => {
   const { username, avatar, bio, website } = req.body;
 
   try {
-    const existingUser = await prisma.user.findUnique({ where: { username } });
-    if (existingUser && existingUser.id !== userId) {
-      return res.status(400).json({ error: "Questo username è già in uso!" });
+    // FIX: Prisma crasha se gli passi un "username" undefined nel findUnique. 
+    // Eseguiamo il controllo solo se l'utente sta effettivamente cercando di cambiare username.
+    if (username) {
+      const existingUser = await prisma.user.findUnique({ where: { username } });
+      if (existingUser && existingUser.id !== userId) {
+        return res.status(400).json({ error: "Questo username è già in uso!" });
+      }
     }
 
     const updatedUser = await prisma.user.update({
@@ -211,7 +227,7 @@ app.post('/api/projects', async (req, res) => {
 });
 
 // ==========================================
-// PROGETTI (MODIFICA) - NUOVA ROTTA 🛠️
+// PROGETTI (MODIFICA)
 // ==========================================
 app.put('/api/projects/:id', async (req, res) => {
   const projectId = parseInt(req.params.id);
@@ -320,7 +336,7 @@ app.post('/api/projects/:id/comments', async (req, res) => {
   }
 });
 
-// --- COMMENTI (ELIMINA) - NUOVA ROTTA 🛠️ ---
+// --- COMMENTI (ELIMINA) ---
 app.delete('/api/comments/:id', async (req, res) => {
   const commentId = parseInt(req.params.id);
   try {
@@ -329,6 +345,72 @@ app.delete('/api/comments/:id', async (req, res) => {
   } catch (e) {
     console.error("Errore eliminazione commento:", e);
     res.status(500).json({ error: "Errore durante l'eliminazione del commento." });
+  }
+});
+
+// ==========================================
+// MESSAGGI DIRETTI (CHAT)
+// ==========================================
+
+// 1. Invia un messaggio
+app.post('/api/messages', async (req, res) => {
+  const { text, senderId, receiverId } = req.body;
+  
+  // FIX: Controlliamo che i dati ci siano tutti prima di inviarli a Prisma (evita NaN error)
+  if (!text || !senderId || !receiverId) {
+    return res.status(400).json({ error: "Dati mancanti per l'invio del messaggio" });
+  }
+
+  try {
+    const message = await prisma.message.create({
+      data: {
+        text,
+        senderId: parseInt(senderId),
+        receiverId: parseInt(receiverId),
+      },
+      include: {
+        sender: { select: { username: true, avatar: true } },
+      },
+    });
+    res.json(message);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Errore nell'invio del messaggio" });
+  }
+});
+
+// 2. Recupera la cronologia tra due utenti
+app.get('/api/messages/:userId/:contactId', async (req, res) => {
+  const { userId, contactId } = req.params;
+  try {
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: parseInt(userId), receiverId: parseInt(contactId) },
+          { senderId: parseInt(contactId), receiverId: parseInt(userId) },
+        ],
+      },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        sender: { select: { username: true, avatar: true } },
+      },
+    });
+    res.json(messages);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Errore nel recupero dei messaggi" });
+  }
+});
+
+// 3. Recupera la lista degli utenti
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: { id: true, username: true, avatar: true, verified: true }
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: "Errore nel recupero utenti" });
   }
 });
 
