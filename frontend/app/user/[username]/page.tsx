@@ -2,6 +2,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+// IMPORT CORRETTO: 3 livelli per uscire da [username] -> user -> app
 import PostCard from '../../../components/PostCard'; 
 
 interface User {
@@ -54,7 +55,7 @@ export default function UserProfile() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const usersRes = await fetch('http://localhost:3001/api/users');
+        const usersRes = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/users');
         const users: User[] = await usersRes.json();
         
         const targetUsername = decodeURIComponent(username).toLowerCase();
@@ -67,7 +68,7 @@ export default function UserProfile() {
           setFriendsCount(0);
           setFollowingCount(0); 
 
-          const projRes = await fetch('http://localhost:3001/api/projects');
+          const projRes = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/projects');
           const allProjects: Project[] = await projRes.json();
 
           const myProjects = allProjects.filter((p: any) => {
@@ -170,17 +171,17 @@ export default function UserProfile() {
     <main className="min-h-screen bg-slate-950 text-slate-200 font-mono pb-10">
       <div className="fixed inset-0 bg-[linear-gradient(rgba(30,58,138,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(30,58,138,0.05)_1px,transparent_1px)] bg-[size:30px_30px] pointer-events-none z-0"></div>
 
-      <div className="relative z-10 max-w-3xl mx-auto pt-6 px-4">
+      <div className="relative z-10 max-w-4xl mx-auto pt-6 px-4">
         <button onClick={() => router.push('/feed')} className="text-cyan-500 hover:text-cyan-300 text-xs font-bold uppercase tracking-widest flex items-center gap-2 transition-transform hover:-translate-x-2">
           ← Torna al Feed
         </button>
       </div>
 
-      <div className="max-w-3xl mx-auto mt-8 px-4 relative z-10">
+      <div className="max-w-4xl mx-auto mt-8 px-4 relative z-10">
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 md:p-10 backdrop-blur-md shadow-2xl flex flex-col md:flex-row gap-8 items-center md:items-start">
           
           <div className="shrink-0 relative group">
-            <div className={`w-32 h-32 rounded-full border-4 ${isMyProfile ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)]' : 'border-slate-800 group-hover:border-cyan-500'} flex items-center justify-center bg-slate-950 overflow-hidden transition-all duration-300`}>
+            <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full border-4 ${isMyProfile ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.3)]' : 'border-slate-800 group-hover:border-cyan-500'} flex items-center justify-center bg-slate-950 overflow-hidden transition-all duration-300`}>
               {userProfile.avatar ? (
                 <img src={userProfile.avatar} alt={userProfile.username} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
               ) : (
@@ -191,7 +192,7 @@ export default function UserProfile() {
 
           <div className="flex-1 w-full text-center md:text-left space-y-4">
             <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
-              <h1 className="text-3xl font-black text-white uppercase tracking-wider">
+              <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-wider">
                 @{userProfile.username} {isMyProfile && <span className="text-[10px] bg-cyan-500 text-black px-2 py-0.5 ml-2 rounded align-middle">TU</span>}
               </h1>
               
@@ -222,37 +223,39 @@ export default function UserProfile() {
           </div>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-12">
           <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span className="w-8 h-px bg-slate-800"></span> {isMyProfile ? "I_MIEI_PROGETTI" : "ARCHIVIO_PROGETTI"}
+            <span className="w-8 h-px bg-slate-800"></span> ARCHIVIO_PROGETTI
           </h2>
           
           {userProjects.length > 0 ? (
-            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
+            /* GRIGLIA STILE INSTAGRAM: 3 colonne, gap minimo (1px/2px), senza bordi arrotondati */
+            <div className="grid grid-cols-3 gap-[2px] md:gap-1">
               {userProjects.map((project) => (
                 <div 
                   key={project.id} 
                   onClick={() => setSelectedProject(project)}
-                  className="aspect-square bg-slate-950/50 p-1 border border-slate-800/60 rounded-lg overflow-hidden hover:border-cyan-500/80 hover:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all cursor-pointer group relative flex items-center justify-center"
+                  className="aspect-square bg-slate-900 overflow-hidden cursor-pointer group relative flex items-center justify-center"
                 >
                   {project.mediaType === 'image' && project.mediaUrl ? (
-                    <img src={project.mediaUrl} alt="Progetto" className="w-full h-full object-contain opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-transform duration-500" />
+                    <img src={project.mediaUrl} alt="Progetto" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                   ) : project.mediaType === 'video' ? (
-                    <div className="w-full h-full flex items-center justify-center"><span className="text-2xl opacity-60 group-hover:scale-125 transition-transform">🎥</span></div>
+                    <div className="w-full h-full flex items-center justify-center bg-slate-800"><span className="text-3xl opacity-60">🎥</span></div>
                   ) : project.mediaType === 'code' ? (
-                    <div className="w-full h-full flex items-center justify-center"><span className="text-2xl opacity-60 group-hover:scale-125 transition-transform">⌨️</span></div>
+                    <div className="w-full h-full flex items-center justify-center bg-slate-800"><span className="text-3xl opacity-60">⌨️</span></div>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center"><span className="text-2xl opacity-60 group-hover:scale-125 transition-transform">📁</span></div>
+                    <div className="w-full h-full flex items-center justify-center bg-slate-800"><span className="text-3xl opacity-60">📁</span></div>
                   )}
                   
-                  <div className="absolute inset-0 bg-slate-900/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 z-20 backdrop-blur-[1px] rounded-lg">
-                    <span className="text-white font-bold text-xs flex items-center gap-1">❤️ {project.likesCount || 0}</span>
+                  {/* Overlay on hover come IG (mostra i like) */}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-20">
+                    <span className="text-white font-bold text-sm md:text-base flex items-center gap-1">❤️ {project.likesCount || 0}</span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center p-10 border border-dashed border-slate-800 rounded-xl text-slate-500 text-xs uppercase tracking-widest">
+            <div className="text-center p-10 border border-dashed border-slate-800 text-slate-500 text-xs uppercase tracking-widest">
               Nessun progetto caricato.
             </div>
           )}
@@ -260,16 +263,16 @@ export default function UserProfile() {
       </div>
 
       {selectedProject && currentUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in zoom-in duration-200">
           
           <button 
             onClick={() => setSelectedProject(null)}
-            className="absolute top-6 right-6 md:top-10 md:right-10 text-white bg-slate-800 hover:bg-red-500 w-12 h-12 rounded-full flex items-center justify-center text-xl font-black transition-colors z-50 border border-slate-700"
+            className="absolute top-4 right-4 md:top-8 md:right-8 text-white bg-slate-800/80 hover:bg-red-500 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center text-xl font-black transition-colors z-50 backdrop-blur-sm"
           >
             ✕
           </button>
 
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar rounded-2xl relative">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar rounded-2xl relative shadow-2xl">
             <PostCard 
               p={selectedProject as any} 
               user={currentUser as any} 

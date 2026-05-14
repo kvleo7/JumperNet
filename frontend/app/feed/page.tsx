@@ -41,8 +41,8 @@ export default function Feed() {
           
           // SCARICA SIA I PROGETTI CHE GLI UTENTI IN PARALLELO
           const [projRes, usersRes] = await Promise.all([
-            fetch('http://localhost:3001/api/projects'),
-            fetch('http://localhost:3001/api/users')
+            fetch('${process.env.NEXT_PUBLIC_API_URL}/api/projects'),
+            fetch('${process.env.NEXT_PUBLIC_API_URL}/api/users')
           ]);
 
           if (projRes.ok && usersRes.ok) {
@@ -142,7 +142,7 @@ export default function Feed() {
     e.preventDefault();
     if (!user) return alert("Devi effettuare il login per postare.");
     try {
-      const res = await fetch('http://localhost:3001/api/projects', {
+      const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...newPost, userId: user.id })
@@ -162,7 +162,7 @@ export default function Feed() {
   const handleUpvote = async (projectId: number) => {
     if (!user) return alert("ERRORE: Devi autenticarti per mettere Like.");
     try {
-      const res = await fetch(`http://localhost:3001/api/projects/${projectId}/like`, { 
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/projects/${projectId}/like`, { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id })
@@ -181,7 +181,7 @@ export default function Feed() {
     if (!text.trim()) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/api/projects/${projectId}/comments`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/projects/${projectId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: text, userId: user.id })
@@ -198,7 +198,7 @@ export default function Feed() {
   const handleDeleteComment = async (commentId: number, projectId: number) => {
     if (!confirm("Sei sicuro di voler eliminare questo commento?")) return;
     try {
-      const res = await fetch(`http://localhost:3001/api/comments/${commentId}`, { method: 'DELETE' });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/comments/${commentId}`, { method: 'DELETE' });
       if (res.ok) {
         setProjects(projects.map(p => p.id === projectId ? { ...p, comments: (p.comments || []).filter(c => c.id !== commentId) } : p));
       } else { alert("❌ Errore eliminazione."); }

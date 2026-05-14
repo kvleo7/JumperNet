@@ -19,7 +19,7 @@ function VerifyTerminal() {
 
     const verifyAccount = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/verify?token=${token}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/verify?token=${token}`);
         const data = await res.json();
 
         if (res.ok) {

@@ -1,7 +1,7 @@
 // frontend/app/chat/page.tsx
 "use client";
 import { useState, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation'; // <-- Aggiunto useRouter
+import { useSearchParams, useRouter } from 'next/navigation';
 import { User } from '../../types';
 
 interface Message {
@@ -21,7 +21,7 @@ export default function ChatPage() {
   
   const searchParams = useSearchParams();
   const targetIdFromUrl = searchParams.get('target');
-  const router = useRouter(); // <-- Inizializzato il router
+  const router = useRouter();
 
   // 1. Recupera l'utente loggato
   useEffect(() => {
@@ -31,13 +31,15 @@ export default function ChatPage() {
     }
   }, []);
 
-  // 2. Carica i contatti e imposta l'utente target se presente nell'URL
+  // 2. Carica i contatti e imposta l'utente target
   useEffect(() => {
     if (currentUser?.id) {
-      fetch('http://localhost:3001/api/users')
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`)
         .then(res => res.json())
         .then(data => {
-          const otherUsers = data.filter((u: User) => u.id !== currentUser.id);
+          // FIX: Controlliamo che data sia un array prima di filtrare
+          const validData = Array.isArray(data) ? data : [];
+          const otherUsers = validData.filter((u: User) => u.id !== currentUser.id);
           setUsers(otherUsers);
           
           if (targetIdFromUrl) {
@@ -45,7 +47,10 @@ export default function ChatPage() {
             if (target) setSelectedUser(target);
           }
         })
-        .catch(err => console.error("Errore contatti:", err));
+        .catch(err => {
+          console.error("Errore contatti:", err);
+          setUsers([]);
+        });
     }
   }, [currentUser, targetIdFromUrl]);
 
@@ -54,10 +59,13 @@ export default function ChatPage() {
     if (!currentUser?.id || !selectedUser) return;
     const fetchMessages = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/messages/${currentUser.id}/${selectedUser.id}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/messages/${currentUser.id}/${selectedUser.id}`);
         const data = await res.json();
-        setMessages(data);
-      } catch (err) { console.error(err); }
+        // Protezione anche qui per evitare errori nel .map() del render
+        setMessages(Array.isArray(data) ? data : []);
+      } catch (err) { 
+        console.error("Errore caricamento messaggi:", err); 
+      }
     };
     
     fetchMessages();
@@ -69,7 +77,7 @@ export default function ChatPage() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser || !currentUser?.id) return;
     try {
-      const res = await fetch('http://localhost:3001/api/messages', {
+      const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: newMessage, senderId: currentUser.id, receiverId: selectedUser.id })
@@ -90,7 +98,6 @@ export default function ChatPage() {
       {/* SIDEBAR SINISTRA: Lista Contatti */}
       <div className="w-1/4 max-w-[350px] border-r border-cyan-900/30 bg-slate-900/50 flex flex-col">
         <div className="p-6 border-b border-cyan-900/30">
-          {/* TASTO TORNA ALLA HOME */}
           <button 
             onClick={() => router.push('/feed')} 
             className="flex items-center gap-2 text-[10px] text-cyan-500/70 hover:text-cyan-400 uppercase tracking-widest font-bold mb-4 transition-all"
@@ -130,7 +137,6 @@ export default function ChatPage() {
       <div className="flex-1 flex flex-col bg-slate-950 relative">
         {selectedUser ? (
           <>
-            {/* Header Chat Corrente */}
             <div className="p-4 bg-slate-900/80 backdrop-blur-md border-b border-cyan-900/30 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="text-cyan-500 text-xs">CHANNEL_SECURE:</span>
@@ -141,7 +147,6 @@ export default function ChatPage() {
               </div>
             </div>
 
-            {/* Messaggi */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.03)_0,transparent_100%)]">
               {messages.map((m, i) => (
                 <div key={i} className={`flex ${m.senderId === currentUser.id ? 'justify-end' : 'justify-start'}`}>
@@ -159,7 +164,6 @@ export default function ChatPage() {
               ))}
             </div>
 
-            {/* Input Box */}
             <div className="p-6 bg-slate-900/50 border-t border-cyan-900/30">
               <form onSubmit={sendMessage} className="max-w-4xl mx-auto flex gap-3">
                 <input 

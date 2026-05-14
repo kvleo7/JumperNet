@@ -1,119 +1,189 @@
-// frontend/app/notifications/page.tsx
 "use client";
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
-interface AppNotification {
-  id: number;
-  type: 'follow' | 'like' | 'comment' | 'share';
-  actorName: string; // Chi ha fatto l'azione
-  actorAvatar?: string;
-  projectId?: number; // Se riguarda un progetto
-  projectName?: string;
-  message?: string; // Per i commenti
-  time: string;
+import React, { useState } from 'react';
+
+// --- TIPI E DATI FINTI ---
+type NotificationType = 'like' | 'comment' | 'follow' | 'system';
+
+interface Notification {
+  id: string;
+  type: NotificationType;
+  actor?: { username: string; avatar: string };
+  content: string;
+  target?: string; // Es: il nome del progetto
+  timeAgo: string;
   isRead: boolean;
 }
 
-export default function NotificationsPage() {
-  const router = useRouter();
-  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  
-  // Dati simulati (in futuro farai un fetch da http://localhost:3001/api/notifications?userId=...)
-  const [notifications, setNotifications] = useState<AppNotification[]>([
-    { id: 1, type: 'follow', actorName: 'Neo_Hacker', time: '2 min fa', isRead: false },
-    { id: 2, type: 'like', actorName: 'Trinity99', projectId: 101, projectName: 'Script_Python_AI', time: '1 ora fa', isRead: false },
-    { id: 3, type: 'comment', actorName: 'CyberPunk_01', projectId: 102, projectName: 'Interfaccia React', message: 'Assolutamente geniale il modo in cui hai gestito lo state!', time: '3 ore fa', isRead: true },
-    { id: 4, type: 'share', actorName: 'Morpheus', projectId: 101, projectName: 'Script_Python_AI', time: 'Ieri', isRead: true },
-  ]);
+export default function CyberNotificationsPage() {
+  const [filter, setFilter] = useState<'all' | 'mentions' | 'system'>('all');
 
-  useEffect(() => {
-    const userStr = localStorage.getItem('jumper_user');
-    if (userStr && userStr !== "undefined") {
-      setCurrentUserId(JSON.parse(userStr).id);
+  const notifications: Notification[] = [
+    {
+      id: '1',
+      type: 'system',
+      content: 'AGGIORNAMENTO SISTEMA: Deploy v2.0.4 completato. Nuovi filtri di ricerca online.',
+      timeAgo: '10 MIN FA',
+      isRead: false,
+    },
+    {
+      id: '2',
+      type: 'like',
+      actor: { username: 'sarah_codes', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah' },
+      content: 'ha lasciato un reazione di bypass al tuo progetto',
+      target: 'Sensore Ambientale ESP32',
+      timeAgo: '2 ORE FA',
+      isRead: false,
+    },
+    {
+      id: '3',
+      type: 'comment',
+      actor: { username: 'pietro_3d', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Pietro' },
+      content: 'ha decriptato il tuo codice e commentato: "Ottima logica per i motori stepper!"',
+      target: 'Snippet Python CNC',
+      timeAgo: '5 ORE FA',
+      isRead: true,
+    },
+    {
+      id: '4',
+      type: 'follow',
+      actor: { username: 'arduino_master', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Arduino' },
+      content: 'ha stabilito una connessione con il tuo nodo. Ora ti segue.',
+      timeAgo: '1 GIORNO FA',
+      isRead: true,
+    },
+    {
+      id: '5',
+      type: 'like',
+      actor: { username: 'lucy_circuits', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Lucy' },
+      content: 'ha approvato il tuo schema',
+      target: 'Circuito Amplificatore Audio',
+      timeAgo: '2 GIORNI FA',
+      isRead: true,
     }
-  }, []);
+  ];
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, isRead: true })));
-    // Qui andrà la chiamata API per aggiornare il DB
-  };
+  // Filtriamo le notifiche in base al tab selezionato
+  const filteredNotifications = notifications.filter(n => {
+    if (filter === 'all') return true;
+    if (filter === 'system') return n.type === 'system';
+    if (filter === 'mentions') return n.type === 'comment' || n.type === 'follow';
+    return true;
+  });
 
-  const getNotificationIcon = (type: string) => {
+  // Funzione per assegnare il colore/icona in base al tipo
+  const getStyleByType = (type: NotificationType) => {
     switch (type) {
-      case 'follow': return '👤';
-      case 'like': return '❤️';
-      case 'comment': return '💬';
-      case 'share': return '✈️';
-      default: return '🔔';
+      case 'like': return { color: 'text-fuchsia-500', bg: 'bg-fuchsia-500/10', border: 'border-fuchsia-500/30', icon: '♥' };
+      case 'comment': return { color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/30', icon: '≡' };
+      case 'follow': return { color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/30', icon: '◬' };
+      case 'system': return { color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/30', icon: '⚠' };
     }
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-200 font-mono pb-20 pt-6 px-4">
-      <div className="max-w-2xl mx-auto relative z-10">
+    <div className="min-h-screen bg-[#050505] text-slate-300 font-sans selection:bg-cyan-500/30">
+      
+      {/* HEADER TERMINALE */}
+      <header className="sticky top-0 z-50 bg-[#050505]/90 backdrop-blur-md border-b border-cyan-900/50 pt-6 pb-4">
+        <div className="max-w-3xl mx-auto px-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tighter text-cyan-400">NET_ALERTS</h1>
+            <p className="text-[10px] font-mono text-cyan-700 uppercase tracking-widest mt-1">
+              Status: <span className="text-emerald-500 animate-pulse">Online</span> // Log eventi
+            </p>
+          </div>
+          <div className="text-xs font-mono text-slate-500 border border-slate-800 px-3 py-1 bg-black">
+            {notifications.filter(n => !n.isRead).length} NON LETTI
+          </div>
+        </div>
         
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <button onClick={() => router.back()} className="text-cyan-500 hover:text-cyan-300 text-xs font-bold uppercase tracking-widest transition-transform hover:-translate-x-2">
-            ← Indietro
+        {/* TABS FILTRO */}
+        <div className="max-w-3xl mx-auto px-4 mt-6 flex gap-6 text-sm font-mono uppercase tracking-wider">
+          <button 
+            onClick={() => setFilter('all')}
+            className={`pb-2 transition-all ${filter === 'all' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-600 hover:text-cyan-700'}`}
+          >
+            Tutto_I/O
           </button>
-          <h1 className="text-xl font-black text-white uppercase tracking-[0.2em]">Registro_Eventi</h1>
-          <button onClick={markAllAsRead} className="text-[10px] text-slate-500 hover:text-cyan-400 uppercase tracking-widest border border-slate-800 hover:border-cyan-500 px-3 py-1 rounded transition-all">
-            Segna Letti
+          <button 
+            onClick={() => setFilter('mentions')}
+            className={`pb-2 transition-all ${filter === 'mentions' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-600 hover:text-cyan-700'}`}
+          >
+            Connessioni
+          </button>
+          <button 
+            onClick={() => setFilter('system')}
+            className={`pb-2 transition-all ${filter === 'system' ? 'text-cyan-400 border-b-2 border-cyan-400' : 'text-slate-600 hover:text-cyan-700'}`}
+          >
+            Sistema
           </button>
         </div>
+      </header>
 
-        {/* Lista Notifiche */}
-        <div className="space-y-3">
-          {notifications.length > 0 ? (
-            notifications.map((notif) => (
-              <div 
-                key={notif.id} 
-                className={`p-4 rounded-xl border flex items-center gap-4 transition-all hover:scale-[1.01] cursor-pointer ${
-                  notif.isRead 
-                    ? 'bg-slate-900/50 border-slate-800' 
-                    : 'bg-slate-800 border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.1)]'
-                }`}
-              >
-                <div className="text-2xl">{getNotificationIcon(notif.type)}</div>
-                
-                <div className="flex-1">
-                  <p className="text-sm text-slate-300">
-                    <span className="font-bold text-white hover:text-cyan-400">@{notif.actorName}</span>
-                    {notif.type === 'follow' && ' ha iniziato a seguirti.'}
-                    {notif.type === 'like' && ' ha messo like al tuo progetto '}
-                    {notif.type === 'comment' && ' ha commentato '}
-                    {notif.type === 'share' && ' ha condiviso il tuo progetto '}
-                    
-                    {notif.projectName && (
-                      <span className="text-cyan-500 italic">"{notif.projectName}"</span>
-                    )}
-                  </p>
-                  
-                  {notif.message && (
-                    <p className="text-xs text-slate-500 mt-1 border-l-2 border-slate-700 pl-2 italic">
-                      "{notif.message}"
-                    </p>
-                  )}
-                  
-                  <span className="text-[10px] text-slate-600 uppercase tracking-widest mt-2 block">
-                    {notif.time}
-                  </span>
-                </div>
+      {/* LISTA NOTIFICHE */}
+      <main className="max-w-3xl mx-auto px-4 py-8 flex flex-col gap-3">
+        {filteredNotifications.map((notif) => {
+          const style = getStyleByType(notif.type);
+          
+          return (
+            <div 
+              key={notif.id} 
+              className={`relative p-4 flex gap-4 items-start bg-black border ${notif.isRead ? 'border-slate-800/50' : style.border} hover:bg-slate-900/50 transition-colors group cursor-pointer`}
+            >
+              {/* Indicatore "Non Letto" (Glow Laterale) */}
+              {!notif.isRead && (
+                <div className={`absolute left-0 top-0 bottom-0 w-1 ${style.bg} shadow-[0_0_10px_currentColor] ${style.color}`}></div>
+              )}
 
-                {!notif.isRead && (
-                  <div className="w-2 h-2 rounded-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,1)] animate-pulse"></div>
+              {/* Icona Tipo Notifica */}
+              <div className={`w-10 h-10 shrink-0 flex items-center justify-center font-mono text-xl border ${style.border} ${style.bg} ${style.color}`}>
+                {notif.type === 'system' ? (
+                  style.icon
+                ) : (
+                  <img src={notif.actor?.avatar} alt="User" className="w-full h-full object-cover opacity-80 mix-blend-screen" />
                 )}
               </div>
-            ))
-          ) : (
-            <div className="text-center py-20 text-slate-600 uppercase tracking-widest text-xs border border-dashed border-slate-800 rounded-xl">
-              Nessuna nuova notifica nel sistema.
+
+              {/* Contenuto */}
+              <div className="flex-1">
+                <p className="text-sm">
+                  {notif.actor && (
+                    <span className="font-bold text-slate-100 mr-2 hover:text-cyan-400 transition-colors">
+                      @{notif.actor.username}
+                    </span>
+                  )}
+                  <span className="text-slate-400">{notif.content}</span>
+                  {notif.target && (
+                    <span className={`ml-2 font-mono text-xs px-2 py-0.5 bg-slate-900 border ${style.border} ${style.color}`}>
+                      [{notif.target}]
+                    </span>
+                  )}
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className={`${style.color} text-xs`}>{style.icon}</span>
+                  <span className="font-mono text-[10px] text-slate-600">{notif.timeAgo}</span>
+                </div>
+              </div>
+
+              {/* Azioni rapide su hover (Solo visibili col mouse sopra) */}
+              <div className="hidden sm:flex opacity-0 group-hover:opacity-100 transition-opacity items-center gap-2">
+                 <button className="text-[10px] font-mono border border-cyan-900 text-cyan-500 hover:bg-cyan-950 px-2 py-1 transition-colors">
+                    &gt; INIZIALIZZA
+                 </button>
+              </div>
+
             </div>
-          )}
-        </div>
-      </div>
-    </main>
+          );
+        })}
+
+        {filteredNotifications.length === 0 && (
+          <div className="text-center py-12 font-mono text-slate-600 border border-slate-800 bg-black border-dashed">
+            [ NESSUN RECORD TROVATO NEI LOG ]
+          </div>
+        )}
+      </main>
+      
+    </div>
   );
 }

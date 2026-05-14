@@ -26,7 +26,7 @@ export default function ChatSidebar({ isOpen, onClose, currentUser, targetUserId
 
   useEffect(() => {
     if (isOpen && currentUser?.id) {
-      fetch('http://localhost:3001/api/users')
+      fetch('${process.env.NEXT_PUBLIC_API_URL}/api/users')
         .then(res => res.json())
         .then(data => {
           const otherUsers = data.filter((u: User) => u.id !== currentUser.id);
@@ -44,7 +44,7 @@ export default function ChatSidebar({ isOpen, onClose, currentUser, targetUserId
     if (!isOpen || !currentUser?.id || !selectedUser) return;
     const fetchMessages = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/messages/${currentUser.id}/${selectedUser.id}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/messages/${currentUser.id}/${selectedUser.id}`);
         const data = await res.json();
         setMessages(data);
       } catch (err) { console.error("Errore messaggi", err); }
@@ -58,7 +58,7 @@ export default function ChatSidebar({ isOpen, onClose, currentUser, targetUserId
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser || !currentUser?.id) return;
     try {
-      const res = await fetch('http://localhost:3001/api/messages', {
+      const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: newMessage, senderId: currentUser.id, receiverId: selectedUser.id })
