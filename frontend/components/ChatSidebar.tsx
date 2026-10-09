@@ -26,10 +26,10 @@ export default function ChatSidebar({ isOpen, onClose, currentUser, targetUserId
 
   useEffect(() => {
     if (isOpen && currentUser?.id) {
-      fetch('${process.env.NEXT_PUBLIC_API_URL}/api/users')
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`)
         .then(res => res.json())
         .then(data => {
-          const otherUsers = data.filter((u: User) => u.id !== currentUser.id);
+          const otherUsers = (Array.isArray(data) ? data : []).filter((u: User) => u.id !== currentUser.id);
           setUsers(otherUsers);
           if (targetUserId) {
             const target = otherUsers.find((u: User) => u.id === Number(targetUserId));
@@ -42,30 +42,33 @@ export default function ChatSidebar({ isOpen, onClose, currentUser, targetUserId
 
   useEffect(() => {
     if (!isOpen || !currentUser?.id || !selectedUser) return;
+    let cancelled = false;
+    setMessages([]);
     const fetchMessages = async () => {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/messages/${currentUser.id}/${selectedUser.id}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        setMessages(data);
+        if (!cancelled) setMessages(Array.isArray(data) ? data : []);
       } catch (err) { console.error("Errore messaggi", err); }
     };
-    fetchMessages(); 
-    const interval = setInterval(fetchMessages, 3000); 
-    return () => clearInterval(interval); 
-  }, [isOpen, currentUser?.id, selectedUser]);
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 3000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [isOpen, currentUser?.id, selectedUser?.id]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser || !currentUser?.id) return;
     try {
-      const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/messages', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: newMessage, senderId: currentUser.id, receiverId: selectedUser.id })
       });
       if (res.ok) {
         const sentMsg = await res.json();
-        setMessages(prev => [...prev, sentMsg]);
+        setMessages(prev => prev.some(m => m.id === sentMsg.id) ? prev : [...prev, sentMsg]);
         setNewMessage(""); 
       }
     } catch (err) { console.error("Errore invio", err); }

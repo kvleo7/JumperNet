@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { User } from '../../types';
 
@@ -19,6 +19,7 @@ function ChatContent() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   const searchParams = useSearchParams();
   const targetIdFromUrl = searchParams.get('target');
@@ -30,8 +31,11 @@ function ChatContent() {
 
     if (user && user !== "undefined") {
       setCurrentUser(JSON.parse(user));
+    } else {
+      // Senza login la pagina restava bloccata su "Connessione terminale..."
+      router.push('/login');
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -68,6 +72,11 @@ function ChatContent() {
 
     if (!currentUser?.id || !selectedUser) return;
 
+    // Evita che una risposta in ritardo del contatto precedente
+    // sovrascriva la conversazione appena aperta
+    let cancelled = false;
+    setMessages([]);
+
     const fetchMessages = async () => {
 
       try {
@@ -76,9 +85,11 @@ function ChatContent() {
           `${process.env.NEXT_PUBLIC_API_URL}/api/messages/${currentUser.id}/${selectedUser.id}`
         );
 
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
         const data = await res.json();
 
-        setMessages(Array.isArray(data) ? data : []);
+        if (!cancelled) setMessages(Array.isArray(data) ? data : []);
 
       } catch (err) {
         console.error("Errore caricamento messaggi:", err);
@@ -89,9 +100,17 @@ function ChatContent() {
 
     const interval = setInterval(fetchMessages, 3000);
 
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
 
-  }, [selectedUser, currentUser]);
+  }, [selectedUser?.id, currentUser?.id]);
+
+  // Scorre in fondo quando arrivano nuovi messaggi
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
 
   const sendMessage = async (e: React.FormEvent) => {
 
@@ -121,7 +140,9 @@ function ChatContent() {
 
         const msg = await res.json();
 
-        setMessages([...messages, msg]);
+        setMessages(prev =>
+          prev.some(m => m.id === msg.id) ? prev : [...prev, msg]
+        );
 
         setNewMessage("");
       }
@@ -195,10 +216,10 @@ function ChatContent() {
           <>
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
 
-              {messages.map((m, i) => (
+              {messages.map((m) => (
 
                 <div
-                  key={i}
+                  key={m.id}
                   className={`flex ${
                     m.senderId === currentUser.id
                       ? 'justify-end'
@@ -212,6 +233,8 @@ function ChatContent() {
 
                 </div>
               ))}
+
+              <div ref={bottomRef} />
 
             </div>
 

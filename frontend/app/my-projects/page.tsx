@@ -17,7 +17,7 @@ export default function MyProjectsPage() {
       const parsedUser = JSON.parse(u);
       setUser(parsedUser);
       // Recupera tutti i progetti e filtra quelli dell'utente
-      fetch('${process.env.NEXT_PUBLIC_API_URL}/api/projects')
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/projects`)
         .then(r => r.json())
         .then(data => {
           // Filtra usando user.id o authorId

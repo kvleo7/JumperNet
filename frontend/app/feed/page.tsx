@@ -41,8 +41,8 @@ export default function Feed() {
           
           // SCARICA SIA I PROGETTI CHE GLI UTENTI IN PARALLELO
           const [projRes, usersRes] = await Promise.all([
-            fetch('${process.env.NEXT_PUBLIC_API_URL}/api/projects'),
-            fetch('${process.env.NEXT_PUBLIC_API_URL}/api/users')
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/projects`),
+            fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`)
           ]);
 
           if (projRes.ok && usersRes.ok) {
@@ -142,7 +142,7 @@ export default function Feed() {
     e.preventDefault();
     if (!user) return alert("Devi effettuare il login per postare.");
     try {
-      const res = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/projects', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/projects`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...newPost, userId: user.id })

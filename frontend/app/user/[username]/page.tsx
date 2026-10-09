@@ -55,7 +55,7 @@ export default function UserProfile() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const usersRes = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/users');
+        const usersRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`);
         const users: User[] = await usersRes.json();
         
         const targetUsername = decodeURIComponent(username).toLowerCase();
@@ -68,7 +68,7 @@ export default function UserProfile() {
           setFriendsCount(0);
           setFollowingCount(0); 
 
-          const projRes = await fetch('${process.env.NEXT_PUBLIC_API_URL}/api/projects');
+          const projRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/projects`);
           const allProjects: Project[] = await projRes.json();
 
           const myProjects = allProjects.filter((p: any) => {
