@@ -53,6 +53,16 @@ cd backend && npm install && npm run dev        # http://localhost:3001
 cd frontend && npm install && npm run dev       # http://localhost:3000
 ```
 
-Con `frontend/.env.local` contenente `NEXT_PUBLIC_API_URL=http://localhost:3001`.
+Con `frontend/.env.local` contenente `NEXT_PUBLIC_API_URL=` (vuota): il browser chiama
+`/api/...` e Next.js le inoltra al backend su `localhost:3001` (vedi `next.config.ts`).
+
+### Farlo provare a un amico
+
+- **Stessa Wi-Fi:** avvia il frontend con `npm run dev -- -H 0.0.0.0`, trova il tuo IP con
+  `ipconfig` (riga "Indirizzo IPv4") e manda il link `http://<tuo-IP>:3000`.
+  La prima volta Windows chiede di consentire Node.js nel firewall: accetta su "Reti private".
+- **Da un'altra rete:** in VS Code apri il pannello **PORTE** (accanto a Terminale) →
+  *Inoltra una porta* → `3000` → tasto destro → *Visibilità porta* → **Pubblica**, poi copia l'indirizzo.
+  Basta la porta 3000: le chiamate al backend passano dal proxy.
 
 Al posto di Adminer: `npx prisma studio` (dentro `backend/`) apre un'interfaccia grafica del database nel browser.
